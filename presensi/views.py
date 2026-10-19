@@ -6,7 +6,7 @@ from django.db import models
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from .models import OPD, Presensi, DMSPegawai, LandingPageSetting
@@ -17,7 +17,7 @@ signer = Signer()  # Inisialisasi pengaman / enkripsi URL
 
 def admin_login_view(request):
     if request.user.is_authenticated:
-        return redirect("/dashboard/")
+        return redirect("admin_dashboard")
 
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
@@ -28,7 +28,7 @@ def admin_login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f"Selamat datang kembali, {username}!")
-                return redirect("/dashboard/")
+                return redirect("admin_dashboard")
         else:
             messages.error(request, "Username atau password salah.")
     else:
@@ -37,7 +37,7 @@ def admin_login_view(request):
     return render(request, "presensi/login.html", {"form": form})
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def dashboard_admin_view(request):
     total_opd = OPD.objects.count()
     total_presensi = Presensi.objects.count()
@@ -60,13 +60,13 @@ def logout_view(request):
     return redirect("admin_login")
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def kelola_opd_view(request):
     opd_list = OPD.objects.all().order_by("nama_opd")
     return render(request, "presensi/kelola_opd.html", {"opd_list": opd_list})
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def tambah_opd_view(request):
     if request.method == "POST":
         nama_opd = request.POST.get("nama_opd")
@@ -75,16 +75,15 @@ def tambah_opd_view(request):
             try:
                 OPD.objects.create(nama_opd=nama_opd, singkatan=singkatan)
                 messages.success(request, "Data OPD berhasil ditambahkan!")
-            except Exception as e:
+            except Exception:
                 messages.error(
                     request,
                     "Gagal menambahkan OPD. Kemungkinan nama OPD sudah terdaftar.",
                 )
-        return redirect("kelola_opd")
     return redirect("kelola_opd")
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def edit_opd_view(request, opd_id):
     opd = get_object_or_404(OPD, id=opd_id)
     if request.method == "POST":
@@ -95,11 +94,10 @@ def edit_opd_view(request, opd_id):
             opd.singkatan = singkatan
             opd.save()
             messages.success(request, "Data OPD berhasil diperbarui!")
-            return redirect("kelola_opd")
     return redirect("kelola_opd")
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def hapus_opd_view(request, opd_id):
     opd = get_object_or_404(OPD, id=opd_id)
     opd.delete()
@@ -107,7 +105,7 @@ def hapus_opd_view(request, opd_id):
     return redirect("kelola_opd")
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def import_opd_excel_view(request):
     if request.method == "POST":
         excel_file = request.FILES.get("file_excel")
@@ -185,8 +183,23 @@ def import_opd_excel_view(request):
 
 
 def form_presensi_global_view(request):
+    setting = LandingPageSetting.objects.filter(is_active=True).first()
+    
+    presensi_aktif, status_text = (True, "Buka")
+    if setting:
+        presensi_aktif, status_text = setting.is_presensi_open()
+
+    # Tetap muat data OPD dan render template form_presensi_global.html
+    # agar modal popup & countdown di HTML bisa dirender oleh browser
     opd_list = OPD.objects.all().order_by("nama_opd")
-    return render(request, "presensi/form_presensi_global.html", {"opd_list": opd_list})
+    
+    context = {
+        "setting": setting,
+        "opd_list": opd_list,
+        "presensi_aktif": presensi_aktif,
+        "status_text": status_text,
+    }
+    return render(request, "presensi/form_presensi_global.html", context)
 
 
 @require_POST
@@ -203,21 +216,18 @@ def submit_presensi_global_api(request):
         )
 
     opd_pilih = get_object_or_404(OPD, id=opd_id)
-
     presensi_sebelumnya = Presensi.objects.filter(nip=nip).first()
     
     if presensi_sebelumnya:
         opd_asal_id = presensi_sebelumnya.opd.id
         nama_opd_asal = presensi_sebelumnya.opd.nama_opd
-        
-        # Enkripsi ID OPD asal sebelum dikirim ke frontend
         encrypted_id = signer.sign(str(opd_asal_id))
         
         return JsonResponse(
             {
                 "status": "already_exists",
                 "message": f"NIP tersebut sudah tercatat melakukan presensi sebelumnya di {nama_opd_asal}. Anda akan diarahkan ke halaman rekap.",
-                "token_id": encrypted_id, # Kirim token terenkripsi
+                "token_id": encrypted_id,
             },
             status=400,
         )
@@ -226,8 +236,6 @@ def submit_presensi_global_api(request):
         Presensi.objects.create(
             opd=opd_pilih, nama=nama, nip=nip, jabatan=jabatan if jabatan else ""
         )
-        
-        # Enkripsi ID OPD yang dipilih
         encrypted_id = signer.sign(str(opd_pilih.id))
         
         return JsonResponse(
@@ -246,15 +254,11 @@ def submit_presensi_global_api(request):
 
 def hasil_presensi_opd_view(request, token_id):
     try:
-        # Dekripsi token kembali menjadi ID asli (angka)
         opd_id = signer.unsign(token_id)
     except Exception:
-        # Jika token dipalsukan atau rusak, kembalikan 404 Not Found
-        from django.http import Http404
         raise Http404("Halaman tidak ditemukan.")
 
     opd = get_object_or_404(OPD, id=opd_id)
-    singkatan_opd = opd.singkatan if opd.singkatan else ""
     
     if not opd.nama_opd:
         pegawai_dms_list = DMSPegawai.objects.none()
@@ -282,7 +286,7 @@ def hasil_presensi_opd_view(request, token_id):
     context = {
         "opd": opd,
         "rekap_data": rekap_data,
-        "token_id": token_id, # Kirim token untuk tombol export Excel
+        "token_id": token_id,
     }
     return render(request, "presensi/hasil_presensi_opd.html", context)
 
@@ -291,7 +295,6 @@ def export_rekap_excel(request, token_id):
     try:
         opd_id = signer.unsign(token_id)
     except Exception:
-        from django.http import Http404
         raise Http404("Halaman tidak ditemukan.")
 
     opd = get_object_or_404(OPD, id=opd_id)
@@ -312,7 +315,7 @@ def export_rekap_excel(request, token_id):
     ws.append([f"REKAP PRESENSI & SKOR DMS - {opd.nama_opd.upper()}"])
     ws.append([])
 
-    headers = ["No", "NIP", "Nama Pegawai", "Skor", "OPD Induk", "Unit Kerja"]
+    headers = ["No", "NIP", "Nama Pegawai", "Skor", "OPD Induk", "Unit Kerja", "Status Kehadiran"]
     ws.append(headers)
 
     for index, pegawai in enumerate(pegawai_dms_list, start=1):
@@ -326,51 +329,7 @@ def export_rekap_excel(request, token_id):
             pegawai.skor,
             pegawai.opd_induk,
             pegawai.unit_kerja,
-        ])
-
-    response = HttpResponse(
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    filename = f"Rekap_Presensi_{opd.singkatan or 'OPD'}.xlsx"
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
-
-    wb.save(response)
-    return response
-
-
-def export_rekap_excel(request, opd_id):
-    opd = get_object_or_404(OPD, id=opd_id)
-    
-    if not opd.nama_opd:
-        pegawai_dms_list = DMSPegawai.objects.none()
-    else:
-        q_filter = models.Q(opd_induk__iexact=opd.nama_opd) | models.Q(opd_induk__icontains=opd.nama_opd)
-        if opd.singkatan:
-            q_filter |= models.Q(opd_induk__iexact=opd.singkatan) | models.Q(opd_induk__icontains=opd.singkatan)
-            
-        pegawai_dms_list = DMSPegawai.objects.filter(q_filter).order_by("nama")
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Rekap Presensi & DMS"
-
-    ws.append([f"REKAP PRESENSI & SKOR DMS - {opd.nama_opd.upper()}"])
-    ws.append([])
-
-    headers = ["No", "NIP", "Nama Pegawai", "Skor", "OPD Induk", "Unit Kerja"]
-    ws.append(headers)
-
-    for index, pegawai in enumerate(pegawai_dms_list, start=1):
-        sudah_absen = Presensi.objects.filter(opd=opd, nip=pegawai.nip).exists()
-        status_kehadiran = "Hadir" if sudah_absen else "Belum Absen"
-
-        ws.append([
-            index,
-            str(pegawai.nip),
-            pegawai.nama,
-            pegawai.skor,
-            pegawai.opd_induk,
-            pegawai.unit_kerja,
+            status_kehadiran
         ])
 
     response = HttpResponse(
@@ -388,7 +347,7 @@ def export_rekap_excel(request, opd_id):
 # ==========================================
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def kelola_presensi_view(request):
     presensi_list = Presensi.objects.select_related("opd").order_by(
         "-waktu_submit"
@@ -398,7 +357,7 @@ def kelola_presensi_view(request):
     )
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def hapus_presensi_view(request, presensi_id):
     presensi = get_object_or_404(Presensi, id=presensi_id)
     presensi.delete()
@@ -411,7 +370,7 @@ def hapus_presensi_view(request, presensi_id):
 # ==========================================
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def kelola_dms_view(request):
     dms_list = DMSPegawai.objects.all().order_by("nama")
     context = {
@@ -420,7 +379,7 @@ def kelola_dms_view(request):
     return render(request, "presensi/kelola_dms.html", context)
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def tambah_dms_view(request):
     if request.method == "POST":
         nip = request.POST.get("nip")
@@ -448,7 +407,7 @@ def tambah_dms_view(request):
     return redirect("kelola_dms")
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def edit_dms_view(request, dms_id):
     pegawai = get_object_or_404(DMSPegawai, id=dms_id)
     if request.method == "POST":
@@ -462,7 +421,7 @@ def edit_dms_view(request, dms_id):
     return redirect("kelola_dms")
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def hapus_dms_view(request, dms_id):
     pegawai = get_object_or_404(DMSPegawai, id=dms_id)
     pegawai.delete()
@@ -470,7 +429,7 @@ def hapus_dms_view(request, dms_id):
     return redirect("kelola_dms")
 
 
-@login_required(login_url="/login/")
+@login_required(login_url="admin_login")
 def import_dms_excel_view(request):
     if request.method == "POST":
         excel_file = request.FILES.get("file_excel")
@@ -485,7 +444,6 @@ def import_dms_excel_view(request):
 
         try:
             df = pd.read_excel(excel_file)
-            # Mengubah header ke lowercase, trim spasi, dan ganti spasi dengan underscore
             df.columns = [str(col).strip().lower().replace(" ", "_") for col in df.columns]
 
             if "nip" not in df.columns or "nama" not in df.columns:
@@ -515,7 +473,6 @@ def import_dms_excel_view(request):
                     row.get("opd_induk", row.get("opd", ""))
                 ).strip()
 
-                # Tangkap berbagai kemungkinan variasi kolom unit kerja
                 unit_kerja = str(
                     row.get(
                         "unit_kerja",
@@ -549,8 +506,8 @@ def import_dms_excel_view(request):
 
     return redirect("kelola_dms")
 
+
 def landing_page_view(request):
-    # Mengambil event/setting yang sedang di-set Aktif
     setting = LandingPageSetting.objects.filter(is_active=True).first()
     
     presensi_aktif, presensi_status_text = (True, "Buka")
@@ -569,14 +526,14 @@ def landing_page_view(request):
     }
     return render(request, "presensi/landing_page.html", context)
 
-# 1. Menampilkan Daftar Semua Event / Landing Page Setting
-@login_required(login_url="/login/")
+
+@login_required(login_url="admin_login")
 def kelola_landing_list_view(request):
     settings_list = LandingPageSetting.objects.all().order_by('-created_at')
     return render(request, "presensi/kelola_landing_list.html", {"settings_list": settings_list})
 
-# 2. Form Tambah / Edit Landing Page Setting
-@login_required(login_url="/login/")
+
+@login_required(login_url="admin_login")
 def kelola_landing_form_view(request, setting_id=None):
     setting = get_object_or_404(LandingPageSetting, id=setting_id) if setting_id else None
 
@@ -599,13 +556,12 @@ def kelola_landing_form_view(request, setting_id=None):
         setting.materi_buka = request.POST.get("materi_buka") or None
         setting.materi_tutup = request.POST.get("materi_tutup") or None
 
-        # Jika opsi "Aktifkan" dicentang
         if request.POST.get("is_active") == "on":
             LandingPageSetting.objects.update(is_active=False)
             setting.is_active = True
         else:
             if not LandingPageSetting.objects.filter(is_active=True).exists():
-                setting.is_active = True  # Otomatis aktifkan jika belum ada event aktif
+                setting.is_active = True
 
         if request.FILES.get("flyer_img"):
             setting.flyer_img = request.FILES.get("flyer_img")
@@ -617,8 +573,8 @@ def kelola_landing_form_view(request, setting_id=None):
     context = {"setting": setting}
     return render(request, "presensi/kelola_landing.html", context)
 
-# 3. Fitur Cepat untuk Mengaktifkan Event
-@login_required(login_url="/login/")
+
+@login_required(login_url="admin_login")
 def set_active_landing(request, setting_id):
     LandingPageSetting.objects.update(is_active=False)
     setting = get_object_or_404(LandingPageSetting, id=setting_id)
@@ -626,41 +582,3 @@ def set_active_landing(request, setting_id):
     setting.save()
     messages.success(request, f"Event '{setting.judul_acara}' sekarang diaktifkan di Landing Page Utama.")
     return redirect("kelola_landing")
-
-@login_required(login_url="/login/")
-def kelola_landing_view(request):
-    setting, _ = LandingPageSetting.objects.get_or_create(id=1)
-
-    if request.method == "POST":
-        setting.judul_acara = request.POST.get("judul_acara", "")
-        setting.subjudul_acara = request.POST.get("subjudul_acara", "")
-        setting.kode_sesi = request.POST.get("kode_sesi", "")
-        setting.tagline_poster = request.POST.get("tagline_poster", "")
-        setting.quote_poster = request.POST.get("quote_poster", "")
-        
-        setting.zoom_url = request.POST.get("zoom_url", "")
-        setting.vb_url = request.POST.get("vb_url", "")
-        setting.materi_url = request.POST.get("materi_url", "")
-
-        # Ambil input datetime-local dari form
-        presensi_buka = request.POST.get("presensi_buka")
-        presensi_tutup = request.POST.get("presensi_tutup")
-        materi_buka = request.POST.get("materi_buka")
-        materi_tutup = request.POST.get("materi_tutup")
-
-        setting.presensi_buka = presensi_buka if presensi_buka else None
-        setting.presensi_tutup = presensi_tutup if presensi_tutup else None
-        setting.materi_buka = materi_buka if materi_buka else None
-        setting.materi_tutup = materi_tutup if materi_tutup else None
-
-        if request.FILES.get("flyer_img"):
-            setting.flyer_img = request.FILES.get("flyer_img")
-
-        setting.save()
-        messages.success(request, "Pengaturan Halaman Utama berhasil diperbarui!")
-        return redirect("kelola_landing")
-
-    context = {
-        "setting": setting,
-    }
-    return render(request, "presensi/kelola_landing.html", context)
