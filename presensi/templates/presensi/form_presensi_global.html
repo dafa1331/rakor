@@ -16,7 +16,7 @@
                 Form Presensi Kehadiran
             </h3>
             <p class="text-xs text-amber-300 font-medium tracking-wider uppercase mt-1 mb-0">
-                Rakor Kepegawaian &bull; BKPSDM Kota Metro
+                {{ setting.judul_acara|default:"Rakor Kepegawaian" }} &bull; BKPSDM Kota Metro
             </p>
         </div>
 
@@ -116,6 +116,100 @@
         </div>
     </div>
 </div>
+
+{% if not presensi_aktif %}
+<!-- Modal Overlay Presensi Ditutup / Belum Dibuka -->
+<div id="closedModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 md:p-8 text-center transform transition-all border border-slate-100">
+        
+        <!-- Ikon Peringatan -->
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-rose-50 text-rose-600 mb-4 border border-rose-100 shadow-inner">
+            <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+        </div>
+
+        <h3 class="text-xl font-extrabold text-slate-900 mb-1">Sesi Presensi Ditutup</h3>
+        <p class="text-xs text-slate-500 mb-5">
+            Sesi presensi untuk <strong>{{ setting.judul_acara|default:"Acara Ini" }}</strong> saat ini sedang tidak menerima tanggapan.
+        </p>
+
+        <!-- Box Keterangan & Countdown -->
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status Keterangan</p>
+            <p class="text-sm font-bold text-rose-600 mb-3">{{ status_text }}</p>
+
+            {% if setting.presensi_buka %}
+            <!-- Area Countdown Waktu Buka -->
+            <div id="countdown-wrapper" class="hidden pt-2 border-t border-slate-200">
+                <p class="text-xs text-slate-600 font-medium mb-2">Sesi akan dibuka dalam:</p>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div class="bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
+                        <span id="cd-days" class="block font-extrabold text-base text-slate-800">00</span>
+                        <span class="text-[9px] text-slate-400 uppercase font-bold">Hari</span>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
+                        <span id="cd-hours" class="block font-extrabold text-base text-slate-800">00</span>
+                        <span class="text-[9px] text-slate-400 uppercase font-bold">Jam</span>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
+                        <span id="cd-minutes" class="block font-extrabold text-base text-slate-800">00</span>
+                        <span class="text-[9px] text-slate-400 uppercase font-bold">Menit</span>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
+                        <span id="cd-seconds" class="block font-extrabold text-base text-slate-800">00</span>
+                        <span class="text-[9px] text-slate-400 uppercase font-bold">Detik</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tombol Kembali -->
+        <a href="{% url 'landing_page' %}" class="w-full inline-block bg-blue-900 hover:bg-blue-950 text-white font-bold py-3 px-4 rounded-xl transition duration-200 shadow-md text-sm">
+            Kembali ke Beranda Utama
+        </a>
+    </div>
+</div>
+
+<!-- JavaScript Hitung Mundur (Countdown) -->
+{% if setting.presensi_buka %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const bukaStr = "{{ setting.presensi_buka|date:'Y-m-d H:i:s' }}";
+        if (bukaStr) {
+            const targetTime = new Date(bukaStr.replace(/-/g, "/")).getTime();
+            const wrapper = document.getElementById("countdown-wrapper");
+            
+            if (targetTime && wrapper) {
+                wrapper.classList.remove("hidden");
+
+                const timer = setInterval(function() {
+                    const now = new Date().getTime();
+                    const diff = targetTime - now;
+
+                    if (diff <= 0) {
+                        clearInterval(timer);
+                        location.reload(); // Refresh otomatis begitu jadwal buka tiba
+                        return;
+                    }
+
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    document.getElementById("cd-days").innerText = String(days).padStart(2, '0');
+                    document.getElementById("cd-hours").innerText = String(hours).padStart(2, '0');
+                    document.getElementById("cd-minutes").innerText = String(minutes).padStart(2, '0');
+                    document.getElementById("cd-seconds").innerText = String(seconds).padStart(2, '0');
+                }, 1000);
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
