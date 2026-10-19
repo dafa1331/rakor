@@ -1,0 +1,186 @@
+{% extends 'presensi/layouts/base_public.html' %}
+
+{% block title %}Form Presensi Pegawai | BKPSDM Kota Metro{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto my-4">
+    <!-- Main Card Form Presensi -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-200/80 overflow-hidden">
+        
+        <!-- Header Card Khas Pemkot Metro -->
+        <div class="bg-metro-gradient p-6 text-white text-center relative overflow-hidden border-b-4 border-amber-500" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0284c7 100%);">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 mb-3 shadow-inner">
+                <i class="fa-solid fa-user-pen text-amber-400 text-xl"></i>
+            </div>
+            <h3 class="font-heading text-xl font-extrabold text-white tracking-tight m-0">
+                Form Presensi Kehadiran
+            </h3>
+            <p class="text-xs text-amber-300 font-medium tracking-wider uppercase mt-1 mb-0">
+                Rakor Kepegawaian &bull; BKPSDM Kota Metro
+            </p>
+        </div>
+
+        <div class="p-6 md:p-8">
+            
+            <!-- Alert Notifikasi Bootstrap / Tailwind -->
+            <div id="alertBox" class="alert d-none rounded-2xl shadow-sm mb-4" role="alert"></div>
+            
+            <!-- Success Box State -->
+            <div id="successBox" class="d-none text-center p-6 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm my-2">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl border border-emerald-200">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h4 class="font-heading font-extrabold text-slate-900 text-xl mb-1">Presensi Berhasil Direkam!</h4>
+                <p class="text-xs text-slate-500 mb-6">Data kehadiran Anda telah resmi tercatat di dalam sistem BKPSDM Kota Metro.</p>
+                
+                <div class="space-y-3">
+                    <a href="#" id="linkHasilDMS" class="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-sm" target="_blank">
+                        <i class="fa-solid fa-chart-line text-amber-400"></i>
+                        <span>Lihat Rekap Kehadiran / DMS OPD Ini</span>
+                    </a>
+                    <button onclick="location.reload();" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 px-4 rounded-xl transition text-sm flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>Input Presensi Lainnya</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form Presensi Global -->
+            <form id="formPresensiGlobal" class="space-y-5">
+                {% csrf_token %}
+                
+                <!-- Pilih OPD -->
+                <div>
+                    <label for="opd_id" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Perangkat Daerah (OPD) <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select name="opd_id" id="opd_id" required
+                            class="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition">
+                            <option value="">-- Pilih OPD Asal Anda --</option>
+                            {% for opd in opd_list %}
+                                <option value="{{ opd.id }}">{{ opd.nama_opd }}{% if opd.singkatan %} ({{ opd.singkatan }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Nama Lengkap & Gelar -->
+                <div>
+                    <label for="nama" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Nama Lengkap & Gelar <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" name="nama" id="nama" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition"
+                            placeholder="Contoh: John Herdman">
+                    </div>
+                </div>
+
+                <!-- NIP -->
+                <div>
+                    <label for="nip" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Nomor Induk Pegawai (NIP) <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" name="nip" id="nip" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition"
+                            placeholder="Contoh: 1980*************2">
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1 mb-0"><i class="fa-solid fa-circle-info mr-1"></i> NIP digunakan sebagai verifikasi unik sistem presensi.</p>
+                </div>
+
+                <!-- Jabatan -->
+                <div>
+                    <label for="jabatan" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        Jabatan / Unit Kerja
+                    </label>
+                    <div class="relative">
+                        <input type="text" name="jabatan" id="jabatan"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition"
+                            placeholder="Contoh: Kepala Sub Bagian Umum dan Kepegawaian">
+                    </div>
+                </div>
+
+                <!-- Tombol Submit -->
+                <div class="pt-2">
+                    <button type="submit" id="btnSubmit" 
+                        class="w-full bg-blue-900 hover:bg-blue-950 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2 text-sm">
+                        <i class="fa-solid fa-paper-plane text-amber-400"></i>
+                        <span>Kirim Presensi Sekarang</span>
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('formPresensiGlobal').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnSubmit');
+        const alertBox = document.getElementById('alertBox');
+        const successBox = document.getElementById('successBox');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-400 mr-2"></i> Memproses Presensi...';
+        
+        const formData = new FormData(this);
+
+        fetch("{% url 'submit_presensi_global_api' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(res => {
+            alertBox.classList.add('d-none');
+            
+            if (res.body.status === 'success' || res.body.status === 'already_exists') {
+                if (res.body.status === 'already_exists') {
+                    alertBox.classList.remove('d-none', 'alert-danger');
+                    alertBox.classList.add('alert-warning');
+                    alertBox.innerHTML = '<i class="fa-solid fa-circle-info mr-1"></i> ' + res.body.message;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-400 mr-2"></i> Mengarahkan ke hasil rekap...';
+                } else {
+                    document.getElementById('formPresensiGlobal').style.display = 'none';
+                    successBox.classList.remove('d-none');
+                }
+                
+                const targetUrl = "/presensi/hasil/" + res.body.token_id + "/";
+                
+                document.getElementById('linkHasilDMS').href = targetUrl;
+
+                if (res.body.status === 'already_exists') {
+                    setTimeout(function() {
+                        window.location.href = targetUrl;
+                    }, 1500);
+                }
+            } 
+            else {
+                alertBox.classList.remove('d-none', 'alert-success', 'alert-warning');
+                alertBox.classList.add('alert-danger');
+                alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> ' + res.body.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane text-amber-400 mr-2"></i> Kirim Presensi Sekarang';
+            }
+        })
+        .catch(err => {
+            alertBox.classList.remove('d-none', 'alert-success', 'alert-warning');
+            alertBox.classList.add('alert-danger');
+            alertBox.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Terjadi kesalahan jaringan atau server.';
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane text-amber-400 mr-2"></i> Kirim Presensi Sekarang';
+        });
+    });
+</script>
+{% endblock %}

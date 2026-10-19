@@ -1,0 +1,112 @@
+{% extends 'presensi/layouts/base.html' %}
+
+{% block title %}Form Presensi | {{ opd.nama_opd }}{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-12 text-center">
+                <h1 class="m-0 font-weight-bold">DAFTAR HADIR PEGAWAI</h1>
+                <h5 class="text-muted text-uppercase mt-1">{{ opd.nama_opd }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                
+                <div class="card card-outline card-primary shadow-sm">
+                    <div class="card-header bg-primary">
+                        <h3 class="card-title"><i class="fas fa-edit mr-1"></i> Silakan Isi Data Kehadiran</h3>
+                    </div>
+                    <div class="card-body">
+                        
+                        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+                        <form id="formPresensi">
+                            {% csrf_token %}
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold">Nama Lengkap <span class="text-danger">*</span></label>
+                                <input type="text" name="nama" id="nama" class="form-control" placeholder="Masukkan nama lengkap beserta gelar" required>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="font-weight-bold">Nomor Induk Pegawai (NIP) <span class="text-danger">*</span></label>
+                                <input type="text" name="nip" id="nip" class="form-control" placeholder="Contoh: 198501012010011001" required>
+                                <small class="text-muted">NIP digunakan sebagai validasi keunikan kehadiran.</small>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label class="font-weight-bold">Jabatan / Unit Kerja</label>
+                                <input type="text" name="jabatan" id="jabatan" class="form-control" placeholder="Contoh: Analis Kepegawaian Ahli Muda">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <button type="submit" id="btnSubmit" class="btn btn-primary btn-block py-2 font-weight-bold">
+                                        <i class="fas fa-paper-plane mr-1"></i> Kirim Presensi
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('formPresensi').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnSubmit');
+        const alertBox = document.getElementById('alertBox');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Mengirim...';
+        
+        const formData = new FormData(this);
+
+        fetch("{% url 'submit_presensi_api' opd.id %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(res => {
+            alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+            
+            if (res.status === 200 && res.body.status === 'success') {
+                alertBox.classList.add('alert-success');
+                alertBox.innerHTML = '<i class="fas fa-check-circle mr-1"></i> ' + res.body.message;
+                document.getElementById('formPresensi').reset();
+            } else {
+                alertBox.classList.add('alert-danger');
+                alertBox.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> ' + res.body.message;
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Kirim Presensi';
+        })
+        .catch(err => {
+            alertBox.classList.remove('d-none', 'alert-success');
+            alertBox.classList.add('alert-danger');
+            alertBox.innerHTML = '<i class="fas fa-times-circle mr-1"></i> Terjadi kesalahan jaringan atau server.';
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Kirim Presensi';
+        });
+    });
+</script>
+{% endblock %}

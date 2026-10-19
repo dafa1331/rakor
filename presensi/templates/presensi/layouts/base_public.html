@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Form Presensi Pegawai | BKPSDM Kota Metro{% endblock %}</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- AdminLTE & Bootstrap 4 CSS Compatibility -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .font-heading { font-family: 'Outfit', sans-serif; }
+        .bg-metro-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0284c7 100%); }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="hold-transition layout-top-nav bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+    
+    <!-- Header Branding Khas Pemkot Metro -->
+    <header class="bg-metro-gradient text-white py-4 px-6 border-b-4 border-amber-500 shadow-md">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="{% url 'landing_page' %}" class="flex items-center space-x-3 text-white hover:text-amber-300 transition">
+                <div class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl p-1.5 border border-white/20 shadow-inner flex items-center justify-center">
+                    <i class="fa-solid fa-landmark text-amber-400 text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-heading font-extrabold text-sm md:text-base tracking-tight uppercase leading-none">
+                        PEMERINTAH KOTA METRO
+                    </h2>
+                    <p class="text-[10px] md:text-xs text-amber-300 font-semibold tracking-wider uppercase m-0">
+                        BKPSDM &bull; Bumi Sai Wawai
+                    </p>
+                </div>
+            </a>
+            <a href="{% url 'landing_page' %}" class="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg border border-white/20 transition flex items-center space-x-1">
+                <i class="fa-solid fa-house text-amber-400"></i>
+                <span class="hidden sm:inline">Halaman Utama</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 py-6">
+        <div class="{% block container_class %}max-w-5xl mx-auto px-4{% endblock %}">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-slate-400 text-xs border-t border-slate-200 bg-white">
+        &copy; 2026 BKPSDM Kota Metro &bull; Pemerintah Kota Metro. All rights reserved.
+    </footer>
+
+    <!-- jQuery & Bootstrap 4 Bundle -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- AdminLTE App -->
+    <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

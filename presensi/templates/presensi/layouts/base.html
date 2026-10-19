@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Panel Admin | BKPSDM Kota Metro{% endblock %}</title>
+
+    <!-- Google Font: Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- DataTables Bootstrap 4 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/css/dataTables.bootstrap4.min.css">
+    <!-- AdminLTE CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .font-heading { font-family: 'Outfit', sans-serif; }
+        
+        /* Tema Warna Khas Pemkot Metro */
+        .bg-metro-navy { background-color: #0f172a !important; }
+        .bg-metro-blue { background-color: #1e3a8a !important; }
+        .border-metro-gold { border-color: #f59e0b !important; }
+        .text-metro-gold { color: #fbbf24 !important; }
+
+        /* Custom Sidebar Admin LTE */
+        .main-sidebar { background-color: #0f172a !important; }
+        .brand-link { border-bottom: 1px solid rgba(255,255,255,0.1) !important; }
+        .sidebar-dark-primary .nav-sidebar>.nav-item>.nav-link.active {
+            background-color: #1e3a8a !important;
+            border-left: 4px solid #f59e0b !important;
+            color: #ffffff !important;
+        }
+        .user-panel { border-bottom: 1px solid rgba(255,255,255,0.08) !important; }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+<div class="wrapper">
+
+    <!-- NAVBAR ATAS -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom border-slate-200">
+        <!-- Left navbar links -->
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link text-slate-700" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a href="{% url 'admin_dashboard' %}" class="nav-link font-weight-bold text-dark">
+                    <i class="fas fa-chart-line text-primary mr-1"></i> Dashboard System
+                </a>
+            </li>
+            <li class="nav-item d-none d-sm-inline-block">
+                <a href="{% url 'landing_page' %}" target="_blank" class="nav-link text-info">
+                    <i class="fas fa-external-link-alt mr-1"></i> Lihat Portal Publik
+                </a>
+            </li>
+        </ul>
+
+        <!-- Right navbar links -->
+        <ul class="navbar-nav ml-auto align-items-center">
+            <li class="nav-item mr-3 d-none d-md-inline-block">
+                <span class="badge badge-warning px-3 py-2 text-dark font-weight-bold shadow-sm" style="background-color: #fef3c7; border: 1px solid #fde68a;">
+                    <i class="fas fa-calendar-alt text-amber-600 mr-1"></i> Rakor Kepegawaian 2026
+                </span>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'admin_logout' %}" class="btn btn-outline-danger btn-sm font-weight-bold px-3 rounded-lg">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <!-- /.navbar -->
+
+    <!-- SIDEBAR UTAMA -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-3">
+        <!-- Brand Logo -->
+        <a href="{% url 'admin_dashboard' %}" class="brand-link text-center py-3 bg-metro-navy">
+            <div class="d-flex align-items-center justify-content-center px-2">
+                <div class="mr-2 rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                    <i class="fas fa-landmark text-slate-900"></i>
+                </div>
+                <div class="text-left leading-tight">
+                    <span class="brand-text font-weight-bold font-heading text-white d-block" style="font-size: 14px; tracking-wide: 1px;">BKPSDM KOTA METRO</span>
+                    <small class="text-warning font-weight-semibold uppercase" style="font-size: 10px; letter-spacing: 1px;">Bumi Sai Wawai</small>
+                </div>
+            </div>
+        </a>
+
+        <!-- Sidebar User & Navigation -->
+        <div class="sidebar">
+            <!-- User Panel -->
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
+                <div class="image">
+                    <div class="rounded-circle bg-blue-900 text-amber-400 d-flex align-items-center justify-content-center border border-warning" style="width: 38px; height: 38px;">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                </div>
+                <div class="info pl-3">
+                    <a href="#" class="d-block font-weight-bold text-white mb-0" style="font-size: 13px;">{{ request.user.username|title }}</a>
+                    <span class="badge badge-success text-uppercase" style="font-size: 9px; padding: 2px 6px;">Administrator</span>
+                </div>
+            </div>
+
+            <!-- Sidebar Menu -->
+            <nav class="mt-2">
+                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                    
+                    <li class="nav-item">
+                        <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                            <i class="nav-icon fas fa-tachometer-alt"></i>
+                            <p>Dashboard Overview</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase text-muted font-weight-bold" style="font-size: 10px; letter-spacing: 1px;">Kelola Data Utama</li>
+                    
+                    <li class="nav-item">
+                        <a href="{% url 'kelola_opd' %}" class="nav-link {% if 'opd' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="nav-icon fas fa-building"></i>
+                            <p>Data Perangkat Daerah (OPD)</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'kelola_presensi' %}" class="nav-link {% if 'presensi/kelola' in request.path %}active{% endif %}">
+                            <i class="nav-icon fas fa-clipboard-user"></i>
+                            <p>Data Presensi Peserta</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'kelola_dms' %}" class="nav-link {% if request.resolver_match.url_name == 'kelola_dms' %}active{% endif %}">
+                            <i class="nav-icon fas fa-database"></i>
+                            <p>Data Talenta DMS</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase text-muted font-weight-bold" style="font-size: 10px; letter-spacing: 1px;">Konfigurasi Portal</li>
+                    
+                    <li class="nav-item">
+                        <a href="{% url 'kelola_landing' %}" class="nav-link {% if request.resolver_match.url_name == 'kelola_landing' %}active{% endif %}">
+                            <i class="nav-icon fas fa-sliders-h text-warning"></i>
+                            <p>Setting Landing Page</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-header text-uppercase text-muted font-weight-bold" style="font-size: 10px; letter-spacing: 1px;">Sistem Server</li>
+                    
+                    <li class="nav-item">
+                        <a href="/admin/" target="_blank" class="nav-link">
+                            <i class="nav-icon fas fa-cog text-info"></i>
+                            <p>Django Admin Panel</p>
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+    </aside>
+    <!-- /.sidebar -->
+
+    <!-- AREA KONTEN UTAMA -->
+    <div class="content-wrapper bg-slate-50">
+        {% block content %}
+        {% endblock %}
+    </div>
+    <!-- /.content-wrapper -->
+
+    <!-- FOOTER -->
+    <footer class="main-footer text-sm py-3 border-top border-slate-200">
+        <div class="float-right d-none d-sm-inline">
+            <span class="text-muted">Version 2.0 &bull; Build 2026</span>
+        </div>
+        <strong>&copy; 2026 <a href="#" class="text-primary font-weight-bold">BKPSDM Kota Metro</a>.</strong> Pemerintah Kota Metro.
+    </footer>
+
+</div>
+<!-- ./wrapper -->
+
+<!-- REQUIRED SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

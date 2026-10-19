@@ -1,0 +1,121 @@
+{% extends 'presensi/layouts/base.html' %}
+
+{% block title %}Kelola Data Presensi | BKPSDM Kota Metro{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables Bootstrap 4 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/css/dataTables.bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<!-- Content Header -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2 align-items-center">
+            <div class="col-sm-6">
+                <h1 class="m-0 font-weight-bold text-dark font-heading">Kelola Data Presensi Pegawai</h1>
+                <p class="text-muted small m-0">Rekapitulasi seluruh kehadiran masuk peserta Rakor Kepegawaian Kota Metro</p>
+            </div>
+            <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
+                <a href="{% url 'form_presensi_global' %}" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold shadow-sm rounded-lg">
+                    <i class="fas fa-external-link-alt mr-1"></i> Buka Form Presensi Global
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Flash Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert">
+                    <i class="fas fa-check-circle mr-1"></i> {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Card Tabel Presensi -->
+        <div class="card border border-slate-200 shadow-sm rounded-lg overflow-hidden">
+            <div class="card-header bg-metro-navy text-white d-flex justify-content-between align-items-center py-3" style="background-color: #0f172a;">
+                <h3 class="card-title font-weight-bold text-white m-0" style="font-size: 15px;">
+                    <i class="fas fa-clipboard-user text-warning mr-2"></i> Rekapitulasi Kehadiran Pegawai
+                </h3>
+                <span class="badge badge-warning text-dark font-weight-bold px-2.5 py-1">
+                    Total: {{ presensi_list|length }} Data
+                </span>
+            </div>
+            
+            <div class="card-body">
+                <table id="tabelPresensi" class="table table-bordered table-striped align-middle">
+                    <thead class="bg-light text-slate-700">
+                        <tr style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <th style="width: 20px;" class="text-center">No</th>
+                            <th style="width: 140px;">Waktu Submit</th>
+                            <th>Nama Pegawai</th>
+                            <th>NIP</th>
+                            <th>Perangkat Daerah (OPD)</th>
+                            <th>Jabatan / Unit Kerja</th>
+                            <th class="text-center" style="width: 60px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in presensi_list %}
+                        <tr>
+                            <td class="text-center font-weight-bold text-muted">{{ forloop.counter }}</td>
+                            <td class="text-muted small">
+                                <i class="far fa-clock text-info mr-1"></i>{{ item.waktu_submit|date:"d M Y, H:i" }} WIB
+                            </td>
+                            <td class="font-weight-bold text-dark">{{ item.nama }}</td>
+                            <td><code class="text-dark bg-light px-2 py-1 rounded border">{{ item.nip }}</code></td>
+                            <td>
+                                <span class="badge badge-primary px-2.5 py-1.5 font-weight-semibold" style="background-color: #1e3a8a;">
+                                    {{ item.opd.nama_opd }}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ item.jabatan|default:"-" }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'hapus_presensi' item.id %}" class="btn btn-danger btn-xs font-weight-bold shadow-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus data presensi pegawai ini?')" title="Hapus Data Presensi">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables & Plugins -->
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.12.1/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#tabelPresensi').DataTable({
+            "responsive": true,
+            "autoWidth": false,
+            "order": [[ 1, "desc" ]],
+            "language": {
+                "search": "Cari Presensi:",
+                "lengthMenu": "Tampilkan _MENU_ data",
+                "zeroRecords": "Data presensi tidak ditemukan",
+                "info": "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                "infoEmpty": "Tidak ada data",
+                "paginate": { "next": ">>", "previous": "<<" }
+            }
+        });
+    });
+</script>
+{% endblock %}

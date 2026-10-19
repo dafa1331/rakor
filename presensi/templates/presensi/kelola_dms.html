@@ -1,0 +1,246 @@
+{% extends 'presensi/layouts/base.html' %}
+
+{% block title %}Kelola Data DMS Pegawai | BKPSDM Kota Metro{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables Bootstrap 4 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/css/dataTables.bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<!-- Content Header -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2 align-items-center">
+            <div class="col-sm-6">
+                <h1 class="m-0 font-weight-bold text-dark font-heading">Kelola Data Manajemen Talenta (DMS)</h1>
+                <p class="text-muted small m-0">Database skor talenta, OPD induk, dan unit kerja ASN Kota Metro</p>
+            </div>
+            <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
+                <button type="button" class="btn btn-outline-success btn-sm font-weight-bold mr-2 shadow-sm rounded-lg" data-toggle="modal" data-target="#modalImportDMS">
+                    <i class="fas fa-file-excel mr-1"></i> Import Excel DMS
+                </button>
+                <button type="button" class="btn btn-primary btn-sm font-weight-bold shadow-sm rounded-lg" data-toggle="modal" data-target="#modalTambahDMS" style="background-color: #1e3a8a; border-color: #1e3a8a;">
+                    <i class="fas fa-plus mr-1"></i> Tambah Pegawai Baru
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Notifikasi / Flash Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert">
+                    <i class="fas fa-check-circle mr-1"></i> {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Card Tabel Data DMS -->
+        <div class="card border border-slate-200 shadow-sm rounded-lg overflow-hidden">
+            <div class="card-header bg-metro-navy text-white d-flex justify-content-between align-items-center py-3" style="background-color: #0f172a;">
+                <h3 class="card-title font-weight-bold text-white m-0" style="font-size: 15px;">
+                    <i class="fas fa-database text-warning mr-2"></i> Daftar Pegawai & Skor Talenta (DMS)
+                </h3>
+                <span class="badge badge-warning text-dark font-weight-bold px-2.5 py-1">
+                    Total: {{ dms_list|length }} Pegawai
+                </span>
+            </div>
+            
+            <div class="card-body">
+                <table id="tabelDMS" class="table table-bordered table-striped table-sm text-sm align-middle">
+                    <thead class="bg-light text-slate-700">
+                        <tr style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <th style="width: 20px;" class="text-center">No</th>
+                            <th>NIP</th>
+                            <th>Nama Pegawai</th>
+                            <th class="text-center" style="width: 80px;">Skor</th>
+                            <th>OPD Induk</th>
+                            <th>Unit Kerja</th>
+                            <th class="text-center" style="width: 80px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in dms_list %}
+                        <tr>
+                            <td class="text-center font-weight-bold text-muted">{{ forloop.counter }}</td>
+                            <td><code class="text-dark bg-light px-2 py-1 rounded border">{{ item.nip }}</code></td>
+                            <td class="font-weight-bold text-dark">{{ item.nama }}</td>
+                            <td class="text-center">
+                                <span class="badge badge-success px-2.5 py-1 font-weight-bold" style="background-color: #059669;">
+                                    {{ item.skor }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if item.opd_induk %}
+                                    <span class="badge badge-primary px-2 py-1" style="background-color: #1e3a8a;">{{ item.opd_induk }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">{{ item.unit_kerja|default:"-" }}</td>
+                            <td class="text-center">
+                                <button class="btn btn-warning btn-xs font-weight-bold text-white shadow-sm mr-1" data-toggle="modal" data-target="#modalEditDMS{{ item.id }}" title="Edit Data">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <a href="{% url 'hapus_dms' item.id %}" class="btn btn-danger btn-xs font-weight-bold shadow-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus data pegawai DMS ini?')" title="Hapus Data">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- MODAL EDIT DMS -->
+                        <div class="modal fade" id="modalEditDMS{{ item.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content border-0 shadow-lg rounded-lg">
+                                    <form action="{% url 'edit_dms' item.id %}" method="post">
+                                        {% csrf_token %}
+                                        <div class="modal-header bg-warning text-dark">
+                                            <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-1"></i> Edit Data Pegawai DMS</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body text-left">
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">NIP Pegawai</label>
+                                                <input type="text" name="nip" value="{{ item.nip }}" class="form-control" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">Nama Lengkap</label>
+                                                <input type="text" name="nama" value="{{ item.nama }}" class="form-control" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">Skor Talenta</label>
+                                                <input type="number" step="0.01" name="skor" value="{{ item.skor }}" class="form-control">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">OPD Induk</label>
+                                                <input type="text" name="opd_induk" value="{{ item.opd_induk }}" class="form-control">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">Unit Kerja</label>
+                                                <input type="text" name="unit_kerja" value="{{ item.unit_kerja }}" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Batal</button>
+                                            <button type="submit" class="btn btn-warning font-weight-bold btn-sm text-dark">Simpan Perubahan</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- END MODAL EDIT -->
+                        {% empty %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- MODAL TAMBAH DMS -->
+<div class="modal fade" id="modalTambahDMS" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg rounded-lg">
+            <form action="{% url 'tambah_dms' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header bg-metro-navy text-white" style="background-color: #0f172a;">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fas fa-plus-circle text-warning mr-1"></i> Tambah Pegawai DMS Baru</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="font-weight-bold">NIP Pegawai <span class="text-danger">*</span></label>
+                        <input type="text" name="nip" class="form-control" placeholder="Masukkan 18 digit NIP" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Nama Lengkap <span class="text-danger">*</span></label>
+                        <input type="text" name="nama" class="form-control" placeholder="Nama beserta gelar" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Skor Talenta</label>
+                        <input type="number" step="0.01" name="skor" class="form-control" value="0.0">
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">OPD Induk</label>
+                        <input type="text" name="opd_induk" class="form-control" placeholder="Contoh: BKPSDM KOTA METRO">
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Unit Kerja</label>
+                        <input type="text" name="unit_kerja" class="form-control" placeholder="Contoh: Bidang Mutasi dan Pengembangan SDM">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary font-weight-bold btn-sm" style="background-color: #1e3a8a; border-color: #1e3a8a;">Simpan Pegawai</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL IMPORT EXCEL DMS -->
+<div class="modal fade" id="modalImportDMS" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg rounded-lg">
+            <form action="{% url 'import_dms_excel' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fas fa-file-excel mr-1"></i> Import Data DMS dari Excel</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-left">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Pilih File Excel (.xlsx / .xls)</label>
+                        <input type="file" name="file_excel" class="form-control-file p-1 border rounded" accept=".xlsx, .xls" required>
+                        <small class="form-text text-muted mt-2">
+                            Pastikan file Excel memiliki kolom header: <code>nip</code>, <code>nama</code>, <code>skor</code>, <code>opd_induk</code>, dan <code>unit_kerja</code>.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success font-weight-bold btn-sm">Upload & Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables & Plugins -->
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.12.1/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#tabelDMS').DataTable({
+            "responsive": true,
+            "autoWidth": false,
+            "language": {
+                "search": "Cari Pegawai DMS:",
+                "lengthMenu": "Tampilkan _MENU_ data",
+                "zeroRecords": "Data pegawai DMS tidak ditemukan",
+                "info": "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                "infoEmpty": "Tidak ada data",
+                "paginate": { "next": ">>", "previous": "<<" }
+            }
+        });
+    });
+</script>
+{% endblock %}

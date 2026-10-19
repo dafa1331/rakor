@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login Administrator | BKPSDM Kota Metro</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+        .font-heading { font-family: 'Outfit', sans-serif; }
+        .bg-metro-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0284c7 100%); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-slate-50 text-slate-800">
+
+    <!-- Top Header Navigation Bar -->
+    <header class="bg-metro-gradient text-white py-4 px-6 border-b-4 border-amber-500 shadow-md">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <a href="{% url 'landing_page' %}" class="flex items-center space-x-3 text-white hover:text-amber-300 transition">
+                <div class="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl p-1.5 border border-white/20 shadow-inner flex items-center justify-center">
+                    <i class="fa-solid fa-landmark text-amber-400 text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-heading font-extrabold text-sm md:text-base tracking-tight uppercase leading-none">
+                        PEMERINTAH KOTA METRO
+                    </h2>
+                    <p class="text-[10px] md:text-xs text-amber-300 font-semibold tracking-wider uppercase m-0">
+                        BKPSDM &bull; Bumi Sai Wawai
+                    </p>
+                </div>
+            </a>
+            <a href="{% url 'landing_page' %}" class="text-xs font-bold bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg border border-white/20 transition flex items-center space-x-1">
+                <i class="fa-solid fa-arrow-left text-amber-400"></i>
+                <span class="hidden sm:inline">Kembali ke Portal</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Section Login Box -->
+    <main class="flex-1 flex items-center justify-center p-4 md:p-6 my-6">
+        <div class="w-full max-w-4xl bg-white rounded-3xl shadow-xl border border-slate-200/80 overflow-hidden grid grid-cols-1 md:grid-cols-12">
+            
+            <!-- Left Side: Branding Banner (Identik dengan Landing Page) -->
+            <div class="md:col-span-5 bg-metro-gradient p-8 text-white flex flex-col justify-between relative overflow-hidden border-b md:border-b-0 md:border-r border-slate-200">
+                <!-- Ornament Blur Effect -->
+                <div class="absolute -right-10 -top-10 w-48 h-48 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="relative z-10">
+                    <span class="inline-block bg-amber-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-4">
+                        Panel Administrator
+                    </span>
+                    <h3 class="font-heading text-2xl font-black text-white leading-tight mb-2">
+                        Portal Rakor Kepegawaian
+                    </h3>
+                    <p class="text-xs text-blue-100 leading-relaxed">
+                        Sistem Informasi Presensi Kehadiran & Integrasi Data Manajemen Talenta (DMS) ASN Kota Metro.
+                    </p>
+                </div>
+
+                <div class="relative z-10 my-8 hidden md:block">
+                    <div class="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 text-center">
+                        <i class="fa-solid fa-user-shield text-amber-400 text-3xl mb-2"></i>
+                        <p class="text-[11px] font-medium text-slate-200 italic m-0">
+                            "Akses terbatas khusus untuk pengelola data dan panitia kepegawaian BKPSDM."
+                        </p>
+                    </div>
+                </div>
+
+                <div class="relative z-10 pt-4 border-t border-white/10 text-[11px] text-blue-200 flex items-center justify-between">
+                    <span>BKPSDM Kota Metro</span>
+                    <span class="font-bold text-amber-400">v2.0</span>
+                </div>
+            </div>
+
+            <!-- Right Side: Login Form -->
+            <div class="md:col-span-7 p-6 sm:p-10 flex flex-col justify-center">
+                
+                <div class="mb-6">
+                    <h2 class="font-heading text-2xl font-bold text-slate-900 tracking-tight">
+                        Selamat Datang
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">
+                        Masukkan kredensial akun administrator Anda untuk melanjutkan.
+                    </p>
+                </div>
+
+                <!-- Django Messages Notification -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start space-x-2">
+                            <i class="fa-solid fa-circle-exclamation text-rose-500 text-sm mt-0.5"></i>
+                            <span class="flex-1 font-medium">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Form Login -->
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+
+                    <div>
+                        <label for="id_username" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Username Admin <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-user text-sm"></i>
+                            </div>
+                            <input type="text" name="username" id="id_username" required autofocus
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition"
+                                placeholder="Masukkan username admin">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="id_password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                            Password <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-lock text-sm"></i>
+                            </div>
+                            <input type="password" name="password" id="id_password" required
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition"
+                                placeholder="Masukkan password">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" class="w-4 h-4 text-blue-900 border-slate-300 rounded focus:ring-blue-900">
+                            <span class="text-xs font-medium text-slate-600">Ingat Saya</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full mt-2 bg-blue-900 hover:bg-blue-950 active:scale-[0.99] text-white font-bold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-right-to-bracket text-amber-400"></i>
+                        <span>Masuk ke Dashboard</span>
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-slate-400 text-xs border-t border-slate-200 bg-white">
+        &copy; 2026 BKPSDM Kota Metro &bull; Pemerintah Kota Metro
+    </footer>
+
+</body>
+</html>

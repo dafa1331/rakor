@@ -1,0 +1,133 @@
+{% extends 'presensi/layouts/base_public.html' %}
+
+{% block title %}Rekap Pegawai & Skor DMS | {{ opd.nama_opd }}{% endblock %}
+
+<!-- Override lebar container khusus halaman rekap ini agar Full Width -->
+{% block container_class %}w-full px-4 sm:px-6 lg:px-8{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables Bootstrap 4 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/css/dataTables.bootstrap4.min.css">
+<style>
+    /* Kustomisasi Tampilan DataTables agar Elegan & Pas dengan Theme */
+    .dataTables_wrapper .dataTables_paginate .paginate_button.active a {
+        background-color: #1e3a8a !important;
+        border-color: #1e3a8a !important;
+        color: white !important;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        border-radius: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        outline: none;
+    }
+    .dataTables_wrapper .dataTables_filter input:focus {
+        border-color: #1e3a8a;
+        box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2);
+    }
+    .dataTables_wrapper .dataTables_length select {
+        border-radius: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid #cbd5e1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-3xl shadow-xl border border-slate-200/80 overflow-hidden">
+    
+    <!-- Header Card Khas Pemkot Metro -->
+    <div class="bg-metro-gradient p-6 text-white text-center relative overflow-hidden border-b-4 border-amber-500" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0284c7 100%);">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 mb-3 shadow-inner">
+            <i class="fa-solid fa-address-card text-amber-400 text-xl"></i>
+        </div>
+        <h3 class="font-heading text-xl md:text-2xl font-extrabold text-white tracking-tight uppercase m-0">
+            Skor DMS
+        </h3>
+        <p class="text-sm md:text-base font-bold text-amber-300 tracking-wider uppercase mt-1 mb-0">
+            {{ opd.nama_opd }}
+        </p>
+    </div>
+
+    <div class="p-4 sm:p-6 md:p-8">
+        
+        <!-- Table Wrapper Full Width dengan DataTables -->
+        <div class="table-responsive">
+            <table id="tabelHasilOPD" class="table table-striped table-hover w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                        <th class="py-3 px-4 text-center" style="width: 50px;">No</th>
+                        <th class="py-3 px-4">NIP</th>
+                        <th class="py-3 px-4">Nama Pegawai</th>
+                        <th class="py-3 px-4 text-center" style="width: 100px;">Skor DMS</th>
+                        <th class="py-3 px-4">OPD Induk</th>
+                        <th class="py-3 px-4">Unit Kerja</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium text-slate-800">
+                    {% for item in rekap_data %}
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-3 px-4 text-center font-bold text-slate-400">{{ item.no }}</td>
+                        <td class="py-3 px-4 font-mono text-xs">
+                            <span class="bg-slate-100 text-slate-800 px-2 py-1 rounded border border-slate-200">{{ item.nip }}</span>
+                        </td>
+                        <td class="py-3 px-4 font-bold text-slate-900">{{ item.nama }}</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="inline-block bg-emerald-600 text-white font-bold text-xs px-2.5 py-1 rounded-full shadow-xs">
+                                {{ item.skor }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-600">{{ item.opd_induk }}</td>
+                        <td class="py-3 px-4 text-slate-500">{{ item.unit_kerja }}</td>
+                    </tr>
+                    {% empty %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6 pt-4 border-t border-slate-100">
+            <a href="{% url 'export_rekap_excel' token_id %}" 
+               class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold py-3 px-6 rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-sm">
+                <i class="fa-solid fa-file-excel text-base"></i>
+                <span>Unduh Rekap ke Excel</span>
+            </a>
+            <a href="{% url 'form_presensi_global' %}" 
+               class="w-full sm:w-auto bg-slate-800 hover:bg-slate-900 active:scale-[0.99] text-white font-bold py-3 px-6 rounded-xl shadow-md transition flex items-center justify-center space-x-2 text-sm">
+                <i class="fa-solid fa-arrow-left text-amber-400"></i>
+                <span>Kembali ke Form Presensi</span>
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables JS & Plugins -->
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.12.1/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#tabelHasilOPD').DataTable({
+            "responsive": true,
+            "autoWidth": false,
+            "pageLength": 10,
+            "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]],
+            "language": {
+                "search": "Cari Pegawai:",
+                "lengthMenu": "Tampilkan _MENU_ data",
+                "zeroRecords": "Tidak ada data pegawai yang cocok",
+                "info": "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                "infoEmpty": "Tidak ada data",
+                "infoFiltered": "(disaring dari _MAX_ total data)",
+                "paginate": { 
+                    "next": "Lanjut >", 
+                    "previous": "< Kembali" 
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

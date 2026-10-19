@@ -1,0 +1,212 @@
+{% extends 'presensi/layouts/base.html' %}
+
+{% block title %}Kelola Data OPD | BKPSDM Kota Metro{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables Bootstrap 4 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/css/dataTables.bootstrap4.min.css">
+{% endblock %}
+
+{% block content %}
+<!-- Content Header -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2 align-items-center">
+            <div class="col-sm-6">
+                <h1 class="m-0 font-weight-bold text-dark font-heading">Kelola Organisasi Perangkat Daerah</h1>
+                <p class="text-muted small m-0">Daftar unit kerja dan perangkat daerah di lingkungan Pemerintah Kota Metro</p>
+            </div>
+            <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
+                <button type="button" class="btn btn-outline-success btn-sm font-weight-bold mr-2 shadow-sm rounded-lg" data-toggle="modal" data-target="#modalImportExcel">
+                    <i class="fas fa-file-excel mr-1"></i> Import Excel
+                </button>
+                <button type="button" class="btn btn-primary btn-sm font-weight-bold shadow-sm rounded-lg" data-toggle="modal" data-target="#modalTambahOPD" style="background-color: #1e3a8a; border-color: #1e3a8a;">
+                    <i class="fas fa-plus mr-1"></i> Tambah OPD Baru
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Notifikasi / Flash Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert">
+                    <i class="fas fa-check-circle mr-1"></i> {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Tabel Data OPD -->
+        <div class="card border border-slate-200 shadow-sm rounded-lg overflow-hidden">
+            <div class="card-header bg-metro-navy text-white d-flex justify-content-between align-items-center py-3" style="background-color: #0f172a;">
+                <h3 class="card-title font-weight-bold text-white m-0" style="font-size: 15px;">
+                    <i class="fas fa-building text-warning mr-2"></i> Daftar Organisasi Perangkat Daerah (OPD)
+                </h3>
+                <a href="{% url 'form_presensi_global' %}" target="_blank" class="btn btn-warning btn-xs font-weight-bold px-2 py-1">
+                    <i class="fas fa-external-link-alt mr-1"></i> Buka Form Presensi
+                </a>
+            </div>
+            <div class="card-body">
+                <table id="tabelOPD" class="table table-bordered table-striped align-middle">
+                    <thead class="bg-light text-slate-700">
+                        <tr style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <th style="width: 20px;" class="text-center">No</th>
+                            <th>Nama Organisasi Perangkat Daerah</th>
+                            <th>Singkatan</th>
+                            <th class="text-center" style="width: 100px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for opd in opd_list %}
+                        <tr>
+                            <td class="text-center font-weight-bold text-muted">{{ forloop.counter }}</td>
+                            <td class="font-weight-bold text-dark">{{ opd.nama_opd }}</td>
+                            <td>
+                                {% if opd.singkatan %}
+                                    <span class="badge badge-primary px-2 py-1" style="background-color: #1e3a8a;">{{ opd.singkatan }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-warning btn-xs font-weight-bold text-white shadow-sm mr-1" data-toggle="modal" data-target="#modalEditOPD{{ opd.id }}" title="Edit Data">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <a href="{% url 'hapus_opd' opd.id %}" class="btn btn-danger btn-xs font-weight-bold shadow-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus OPD ini?')" title="Hapus Data">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+
+                        <!-- MODAL EDIT OPD -->
+                        <div class="modal fade" id="modalEditOPD{{ opd.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content border-0 shadow-lg rounded-lg">
+                                    <form action="{% url 'edit_opd' opd.id %}" method="post">
+                                        {% csrf_token %}
+                                        <div class="modal-header bg-warning text-dark">
+                                            <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-1"></i> Edit Data OPD</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body text-left">
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">Nama OPD</label>
+                                                <input type="text" name="nama_opd" value="{{ opd.nama_opd }}" class="form-control" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="font-weight-bold">Singkatan / Akronim</label>
+                                                <input type="text" name="singkatan" value="{{ opd.singkatan|default:'' }}" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Batal</button>
+                                            <button type="submit" class="btn btn-warning font-weight-bold btn-sm text-dark">Simpan Perubahan</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- END MODAL EDIT -->
+                        {% empty %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- MODAL TAMBAH OPD -->
+<div class="modal fade" id="modalTambahOPD" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg rounded-lg">
+            <form action="{% url 'tambah_opd' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header bg-metro-navy text-white" style="background-color: #0f172a;">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fas fa-plus-circle text-warning mr-1"></i> Tambah OPD Baru</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Nama OPD <span class="text-danger">*</span></label>
+                        <input type="text" name="nama_opd" class="form-control" placeholder="Contoh: Badan Kepegawaian dan Pengembangan SDM" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="font-weight-bold">Singkatan (Opsional)</label>
+                        <input type="text" name="singkatan" class="form-control" placeholder="Contoh: BKPSDM">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary font-weight-bold btn-sm" style="background-color: #1e3a8a; border-color: #1e3a8a;">Simpan OPD</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL IMPORT EXCEL -->
+<div class="modal fade" id="modalImportExcel" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow-lg rounded-lg">
+            <form action="{% url 'import_opd_excel' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fas fa-file-excel mr-1"></i> Import Data OPD dari Excel</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-left">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Pilih File Excel (.xlsx / .xls)</label>
+                        <input type="file" name="file_excel" class="form-control-file p-1 border rounded" accept=".xlsx, .xls" required>
+                        <small class="form-text text-muted mt-2">
+                            Pastikan file Excel memiliki kolom header <code>nama_opd</code> dan <code>singkatan</code>.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary font-weight-bold btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success font-weight-bold btn-sm">Upload & Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- DataTables & Plugins -->
+<script src="https://cdn.jsdelivr.net/npm/datatables.net@1.12.1/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/datatables.net-bs4@1.12.1/js/dataTables.bootstrap4.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#tabelOPD').DataTable({
+            "responsive": true,
+            "autoWidth": false,
+            "language": {
+                "search": "Cari OPD:",
+                "lengthMenu": "Tampilkan _MENU_ data",
+                "zeroRecords": "Data OPD tidak ditemukan",
+                "info": "Menampilkan _START_ - _END_ dari _TOTAL_ data",
+                "infoEmpty": "Tidak ada data",
+                "paginate": { "next": ">>", "previous": "<<" }
+            }
+        });
+    });
+</script>
+{% endblock %}

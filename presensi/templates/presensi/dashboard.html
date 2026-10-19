@@ -1,0 +1,132 @@
+{% extends 'presensi/layouts/base.html' %}
+
+{% block title %}Dashboard Administrator | BKPSDM Kota Metro{% endblock %}
+
+{% block content %}
+<!-- Header Konten Halaman -->
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2 align-items-center">
+            <div class="col-sm-6">
+                <h1 class="m-0 font-weight-bold text-dark font-heading">Dashboard Utama</h1>
+                <p class="text-muted small m-0">Ringkasan statistik kehadiran dan aktivitas presensi peserta Rakor Kepegawaian</p>
+            </div>
+            <div class="col-sm-6 text-sm-right mt-2 mt-sm-0">
+                <a href="{% url 'landing_page' %}" target="_blank" class="btn btn-outline-primary btn-sm font-weight-bold shadow-sm rounded-lg">
+                    <i class="fas fa-external-link-alt mr-1"></i> Buka Portal Publik
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Konten Utama -->
+<section class="content">
+    <div class="container-fluid">
+        
+        <!-- Notifikasi / Flash Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert">
+                    <i class="fas fa-check-circle mr-1"></i> {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Widget Statistik Khas Pemkot Metro -->
+        <div class="row">
+            <div class="col-lg-6 col-md-6 col-12">
+                <div class="small-box bg-white border border-slate-200 shadow-sm rounded-lg overflow-hidden p-3">
+                    <div class="inner pl-2">
+                        <span class="text-uppercase text-muted font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Perangkat Daerah</span>
+                        <h2 class="font-weight-bold text-dark my-1">{{ total_opd }}</h2>
+                        <p class="text-muted small mb-0"><i class="fas fa-building text-primary mr-1"></i> Total OPD Terdaftar dalam Sistem</p>
+                    </div>
+                    <div class="icon text-primary opacity-25">
+                        <i class="fas fa-landmark"></i>
+                    </div>
+                    <a href="{% url 'kelola_opd' %}" class="small-box-footer bg-light text-primary font-weight-bold mt-3 py-2 border-top">
+                        Kelola Data OPD <i class="fas fa-arrow-circle-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-6 col-md-6 col-12">
+                <div class="small-box bg-white border border-slate-200 shadow-sm rounded-lg overflow-hidden p-3">
+                    <div class="inner pl-2">
+                        <span class="text-uppercase text-muted font-weight-bold" style="font-size: 11px; letter-spacing: 0.5px;">Total Presensi</span>
+                        <h2 class="font-weight-bold text-success my-1">{{ total_presensi }}</h2>
+                        <p class="text-muted small mb-0"><i class="fas fa-user-check text-success mr-1"></i> Total Kehadiran Masuk Tercatat</p>
+                    </div>
+                    <div class="icon text-success opacity-25">
+                        <i class="fas fa-clipboard-user"></i>
+                    </div>
+                    <a href="{% url 'kelola_presensi' %}" class="small-box-footer bg-light text-success font-weight-bold mt-3 py-2 border-top">
+                        Lihat Semua Presensi <i class="fas fa-arrow-circle-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Aktivitas Terbaru -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card border border-slate-200 shadow-sm rounded-lg overflow-hidden">
+                    <div class="card-header bg-metro-navy text-white d-flex align-items-center justify-content-between py-3" style="background-color: #0f172a;">
+                        <h3 class="card-title font-weight-bold text-white m-0" style="font-size: 15px;">
+                            <i class="fas fa-history text-warning mr-2"></i> 10 Presensi Terbaru Masuk
+                        </h3>
+                        <a href="{% url 'kelola_presensi' %}" class="btn btn-warning btn-xs font-weight-bold px-2 py-1">
+                            Lihat Rekap Lengkap
+                        </a>
+                    </div>
+                    
+                    <div class="card-body table-responsive p-0">
+                        <table class="table table-hover text-nowrap mb-0 align-middle">
+                            <thead class="bg-light text-slate-700">
+                                <tr style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <th width="5%" class="text-center">No</th>
+                                    <th>Nama Pegawai</th>
+                                    <th>NIP</th>
+                                    <th>Perangkat Daerah (OPD)</th>
+                                    <th>Jabatan / Unit Kerja</th>
+                                    <th>Waktu Submit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in recent_presensi %}
+                                <tr>
+                                    <td class="text-center font-weight-bold text-muted">{{ forloop.counter }}</td>
+                                    <td class="font-weight-bold text-dark">{{ item.nama }}</td>
+                                    <td><code class="text-dark bg-light px-2 py-1 rounded border">{{ item.nip }}</code></td>
+                                    <td>
+                                        <span class="badge badge-primary px-2.5 py-1.5 font-weight-semibold" style="background-color: #1e3a8a;">
+                                            {{ item.opd.nama_opd }}
+                                        </span>
+                                    </td>
+                                    <td class="text-muted">{{ item.jabatan|default:"-" }}</td>
+                                    <td class="text-muted small">
+                                        <i class="far fa-clock text-info mr-1"></i>{{ item.waktu_submit|date:"d M Y, H:i" }} WIB
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="fas fa-inbox fa-3x mb-3 text-slate-300 d-block"></i>
+                                        Belum ada data presensi peserta yang masuk.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
